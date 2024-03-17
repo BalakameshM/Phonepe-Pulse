@@ -6,7 +6,7 @@ The objective of this project is to use Streamlit and Plotly to retrieve data fr
 Tools Utilized:
 Python, Pandas, MySQL, mysql-connector-python, Streamlit, Plotly, sqlalchemy
 
-
+<h2>useage</h2>
 __Usage__
 
 1) Clone the repository - https://github.com/BalakameshM/Phonepe-Pulse.git
