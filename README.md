@@ -10,9 +10,11 @@ Python, Pandas, MySQL, mysql-connector-python, Streamlit, Plotly, sqlalchemy
 1) Clone the repository - https://github.com/BalakameshM/Phonepe-Pulse.git
 
 2) Run the python file in vs code to save MySQL database.
+   
     File Name - __extraction_phonepe.py__
    
-4) Run the another file to show visualised data in streamlit.
+3) Run the another file to show visualised data in streamlit.
+
     File Name - __phonepe.py__.
     Run with following command to vs code
       __Streamlit run phonepe.py__
