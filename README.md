@@ -16,7 +16,8 @@ Python, Pandas, MySQL, mysql-connector-python, Streamlit, Plotly, sqlalchemy
 3) Run the another file to show visualised data in streamlit.
 
     File Name - __phonepe.py__.
-    Run with following command to vs code
+   
+    Run with following command in vs code to view streamlit
       __Streamlit run phonepe.py__
 
 <h2>The Problem Statement:</h2>
