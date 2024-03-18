@@ -3,107 +3,14 @@ import pymysql
 import pandas as pd
 import plotly.express as px
 from sqlalchemy import create_engine
+
 st.set_page_config(layout="wide")
 engine = create_engine('mysql+pymysql://root:@localhost/phonepeanalytics_db')
 
-def fetch_total_transaction_amount():
-    query = "SELECT SUM(Transaction_amount) AS Total_Transaction_Amount FROM aggregated_transactions"
-    total_transaction_amount = pd.read_sql(query, engine)
-    return total_transaction_amount['Total_Transaction_Amount'][0]
-
-def aggreagte_transaction_plotly(year):
-    query = f"SELECT * FROM aggregated_transactions WHERE Year={year}"
-    df = pd.read_sql(query, engine)
-    return df
-def aggreagte_quarter_plotly(quarter):
-    query = f"SELECT * FROM aggregated_transactions WHERE Quarter={quarter}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def aggreagte_state_plotly(state):
-    query = f"SELECT * FROM aggregated_transactions WHERE State='{state}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def map_transaction_plotly(year):
-    query = f"SELECT * FROM map_transactions WHERE Year={year}"
-    map = pd.read_sql(query, engine)
-    return map
-
-def map_transaction_quarter_plotly(quarter1):
-    query = f"SELECT * FROM map_transactions WHERE Quarter={quarter1}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def map_state_plotly(state1):
-    query = f"SELECT * FROM map_transactions WHERE State='{state1}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def top_transaction_plotly(year):
-    query = f"SELECT * FROM top_transactions WHERE Year={year}"
-    top = pd.read_sql(query, engine)
-    return top
-
-def top_transaction_quarter_plotly(quarter2):
-    query = f"SELECT * FROM top_transactions WHERE Quarter={quarter2}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def top_state_plotly(state2):
-    query = f"SELECT * FROM top_transactions WHERE State='{state2}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def aggreate_users(year):
-    query = f"SELECT * FROM aggregated_users WHERE Year={year}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def aggreagte_userquarter_plotly(quarter):
-    query = f"SELECT * FROM aggregated_users WHERE Quarter={quarter}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def aggreagteuser_state_plotly(state):
-    query = f"SELECT * FROM aggregated_users WHERE State='{state}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def map_user_plotly(year):
-    query = f"SELECT * FROM map_users WHERE Year={year}"
-    map = pd.read_sql(query, engine)
-    return map
-
-def map_user_quarter_plotly(quarter1):
-    query = f"SELECT * FROM map_users WHERE Quarter={quarter1}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def map_user_state_plotly(state1):
-    query = f"SELECT * FROM map_users WHERE State='{state1}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def top_user_plotly(year):
-    query = f"SELECT * FROM top_users WHERE Year={year}"
-    top = pd.read_sql(query, engine)
-    return top
-
-def top_user_quarter_plotly(quarter2):
-    query = f"SELECT * FROM top_users WHERE Quarter={quarter2}"
-    df = pd.read_sql(query, engine)
-    return df
-
-def top_user_state_plotly(state2):
-    query = f"SELECT * FROM top_users WHERE State='{state2}'"
-    df = pd.read_sql(query, engine)
-    return df
-
-def analytics(year):
-    query = f"SELECT State, Transaction_amount FROM `aggregated_transactions` WHERE Year={year} GROUP BY State ORDER BY Transaction_amount DESC LIMIT 10"
-    df = pd.read_sql(query, engine)
-    return df
+def get_unique_state(table_name):
+    state_query = f"SELECT DISTINCT State FROM {table_name}"
+    state_df = pd.read_sql(state_query, engine)
+    return state_df['State'].tolist()
 
 def get_unique_year(table_name):
     year_query = f"SELECT DISTINCT Year FROM {table_name}"
@@ -114,6 +21,11 @@ def get_unique_quarter(table_name):
     quarter_query = f"SELECT DISTINCT Quarter FROM {table_name}"
     quarter_df = pd.read_sql(quarter_query, engine)
     return quarter_df['Quarter'].tolist()
+
+def fetch_data(table_name, column_name, value):
+    query = f"SELECT * FROM {table_name} WHERE {column_name} = '{value}'"
+    df = pd.read_sql(query, engine)
+    return df
 
 def home_page():
     image = "https://logolook.net/wp-content/uploads/2022/12/PhonePe-Logo.png"
@@ -151,9 +63,9 @@ def data_exploration():
             st.subheader("Aggregate Data")
             agg_years = get_unique_year("aggregated_transactions")
         
-            selected_agg_year = st.selectbox("Select Year for aggregiater", agg_years)
-            df = aggreagte_transaction_plotly(selected_agg_year)
-            filtered_agg_df = df[df['Year'] == selected_agg_year]
+            Year = st.selectbox("Select Year for aggregiater", agg_years)
+            df = fetch_data('aggregated_transactions','Year',Year)
+            filtered_agg_df = df[df['Year'] == Year]
 
             transaction_type_year = filtered_agg_df.groupby(['Transaction_type'])[['Transaction_amount','Transaction_count']].sum().reset_index()
             
@@ -175,12 +87,11 @@ def data_exploration():
             quarter_list = get_unique_quarter('aggregated_transactions')
 
             selected_quarter = st.selectbox("Select Quarter for aggregiater", quarter_list)
-            qua = aggreagte_quarter_plotly(selected_quarter)
+            qua = fetch_data('aggregated_transactions','Quarter',selected_quarter)
             filtered_qua = qua[qua['Quarter'] == selected_quarter]
 
             
             transaction_type_quarter = filtered_qua.groupby(['Transaction_type'])[['Transaction_amount','Transaction_count']].sum().reset_index()
-
             
             fig3 = px.bar(transaction_type_quarter, x='Transaction_type', y='Transaction_count', color='Transaction_type',
                         title='Transaction type and Transaction Count for Each Quarter',
@@ -196,12 +107,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(fig4,use_container_width=True)
 
-            
-            state ="SELECT DISTINCT State FROM aggregated_transactions"
-            state_df = pd.read_sql(state, engine)
-            state_list = state_df['State'].tolist()
+            state_list = get_unique_state('aggregated_transactions')
             selected_state = st.selectbox("Select state for aggregiater", state_list)
-            sta = aggreagte_state_plotly(selected_state)
+            sta = fetch_data('aggregated_transactions','State',selected_state)
             filtered_sta = sta[sta['State'] == selected_state]
 
             transaction_type_state = filtered_sta.groupby(['Transaction_type'])[['Transaction_amount','Transaction_count']].sum().reset_index()
@@ -224,9 +132,9 @@ def data_exploration():
             st.subheader("Map Data")
             map_years = get_unique_year('map_transactions')
 
-            map_selected_year = st.selectbox("Select Year for map", map_years)
-            map = map_transaction_plotly(map_selected_year)
-            filtered_map = map[map['Year'] == map_selected_year]
+            year = st.selectbox("Select Year for map", map_years)
+            map = fetch_data('map_transactions','Year',year)
+            filtered_map = map[map['Year'] == year]
 
             map_transaction_amount = filtered_map.groupby(['Year', 'State'])[['Transaction_amount','Transaction_count']].sum().reset_index()
             
@@ -249,7 +157,7 @@ def data_exploration():
             quarter1_list = get_unique_quarter('map_transactions')
 
             selected_quarter1 = st.selectbox("Select Quarter for map", quarter1_list)
-            qua1 = map_transaction_quarter_plotly(selected_quarter1)
+            qua1 = fetch_data('map_transactions','Quarter',selected_quarter1)
             filtered_qua1 = qua1[qua1['Quarter'] == selected_quarter1]
 
             
@@ -271,11 +179,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(map4,use_container_width=True)
 
-            state1 ="SELECT DISTINCT State FROM map_transactions"
-            state1_df = pd.read_sql(state1, engine)
-            state_list1 = state1_df['State'].tolist()
+            state_list1 = get_unique_state('map_transactions')
             selected_state1 = st.selectbox("Select state for map", state_list1)
-            stae = map_state_plotly(selected_state1)
+            stae = fetch_data('map_transactions','State',selected_state1)
             filtered_sta1 = stae[stae['State'] == selected_state1]
 
             map_transaction_amount = filtered_sta1.groupby(['Quarter', 'State'])['Transaction_amount'].sum().reset_index()
@@ -297,9 +203,9 @@ def data_exploration():
         with tab3:
             st.subheader("Top Data")
             top_year = get_unique_year('top_transactions')
-            top_selected_year = st.selectbox("Select Year for tp", top_year)
-            top = top_transaction_plotly(top_selected_year)
-            filtered_top = top[top['Year'] == top_selected_year]
+            year = st.selectbox("Select Year for tp", top_year)
+            top = fetch_data('top_transactions','Year',year)
+            filtered_top = top[top['Year'] == year]
 
             top_transaction_amount = filtered_top.groupby(['Year', 'State'])['Transaction_amount'].sum().reset_index()
             top_transaction_count = filtered_top.groupby(['Year', 'State'])['Transaction_count'].sum().reset_index()
@@ -321,7 +227,7 @@ def data_exploration():
             quarter2_list = get_unique_quarter('top_transactions')
 
             selected_quarter2 = st.selectbox("Select Quarter for top", quarter2_list)
-            qua2 = top_transaction_quarter_plotly(selected_quarter2)
+            qua2 = fetch_data('top_transactions','Quarter',selected_quarter2)
             filtered_qua2 = qua2[qua2['Quarter'] == selected_quarter2]
 
            
@@ -343,11 +249,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(top4,use_container_width=True)   
 
-            state2 ="SELECT DISTINCT State FROM top_transactions"
-            state2_df = pd.read_sql(state2, engine)
-            state_list2 = state2_df['State'].tolist()
+            state_list2 = get_unique_state('top_transactions')
             selected_state2 = st.selectbox("Select state for top", state_list2)
-            staes = top_state_plotly(selected_state2)
+            staes = fetch_data('top_transactions','State',selected_state2)
             filtered_sta2 = staes[staes['State'] == selected_state2]
 
             top_transaction_amount = filtered_sta2.groupby(['Quarter', 'State'])['Transaction_amount'].sum().reset_index()
@@ -379,7 +283,7 @@ def data_exploration():
             agg_user_year = get_unique_year("aggregated_users")
         
             selected_year = st.selectbox("Select Year for ag user", agg_user_year)
-            agr_users = aggreate_users(selected_year)
+            agr_users = fetch_data('aggregated_users','Year',selected_year)
             filtered_agr_users = agr_users[agr_users['Year'] == selected_year]
             state_user_counts = filtered_agr_users.groupby(['Year', 'State'])['User_count'].sum().reset_index()
             state_total_users = filtered_agr_users.groupby(['Year'])['User_count'].sum().reset_index()
@@ -406,7 +310,7 @@ def data_exploration():
             agg_quarter_list = get_unique_quarter('aggregated_users')
 
             agg_user_selected_quarter = st.selectbox("Select Quarter for aggregated users", agg_quarter_list)
-            agg_user_df = aggreagte_userquarter_plotly(agg_user_selected_quarter)
+            agg_user_df = fetch_data('aggregated_users','Quarter',agg_user_selected_quarter)
             filtered_qua = agg_user_df[agg_user_df['Quarter'] == agg_user_selected_quarter]
 
             
@@ -435,11 +339,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(agg_user_fig2,use_container_width=True)
 
-            state ="SELECT DISTINCT State FROM aggregated_users"
-            state_df = pd.read_sql(state, engine)
-            state_list = state_df['State'].tolist()
+            state_list = get_unique_state('aggregated_users')
             selected_state = st.selectbox("Select state for aggregiater users", state_list)
-            sta = aggreagteuser_state_plotly(selected_state)
+            sta = fetch_data('aggregated_users','State',selected_state)
             filtered_sta = sta[sta['State'] == selected_state]
 
             state_transaction_amount = filtered_sta.groupby(['Quarter', 'State'])['User_percentage'].sum().reset_index()
@@ -463,7 +365,7 @@ def data_exploration():
             map_user_year = get_unique_year("map_users")
 
             map_year = st.selectbox("Select Year for map", map_user_year)
-            map = map_user_plotly(map_year)
+            map = fetch_data('map_users','Year',map_year)
             filtered_map = map[map['Year'] == map_year]
 
             state_registered_user = filtered_map.groupby(['Year', 'State'])['Registerted_users'].sum().reset_index()
@@ -487,7 +389,7 @@ def data_exploration():
             map_quarter_list = get_unique_quarter('map_users')
 
             map_selected_quarter = st.selectbox("Select Quarter for map", map_quarter_list)
-            filtered_map_users_df = map_user_quarter_plotly(map_selected_quarter)
+            filtered_map_users_df = fetch_data('map_users','Quarter',map_selected_quarter)
             filtered_map_users= filtered_map_users_df[filtered_map_users_df['Quarter'] == map_selected_quarter]
 
             map_registered_user = filtered_map_users.groupby(['Quarter', 'State'])['Registerted_users'].sum().reset_index()
@@ -507,11 +409,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(map_user_fig2,use_container_width=True)
 
-            state1 ="SELECT DISTINCT State FROM map_users"
-            state1_df = pd.read_sql(state1, engine)
-            state_list1 = state1_df['State'].tolist()
+            state_list1 = get_unique_state('map_users')
             selected_state1 = st.selectbox("Select state for map", state_list1)
-            stae = map_user_state_plotly(selected_state1)
+            stae = fetch_data('map_users','State',selected_state1)
             filtered_sta1 = stae[stae['State'] == selected_state1]
 
             map_user = filtered_sta1.groupby(['Quarter', 'State'])['Registerted_users'].sum().reset_index()
@@ -533,7 +433,7 @@ def data_exploration():
             st.subheader("Top user Analysis")
             top_user_year= get_unique_year("top_users")
             top_year = st.selectbox("Select Year for top user", top_user_year)
-            top = top_user_plotly(top_year)
+            top = fetch_data('top_users','Year',top_year)
             filtered_top = top[top['Year'] == top_year]
 
             top_registerd_users = filtered_top.groupby(['Year', 'State'])['Registerted_users'].sum().reset_index()
@@ -557,7 +457,7 @@ def data_exploration():
             quarter2_list = get_unique_quarter('top_users')
 
             selected_quarter2 = st.selectbox("Select Quarter for top users", quarter2_list)
-            qua2 = top_user_quarter_plotly(selected_quarter2)
+            qua2 = fetch_data('top_users','Quarter',selected_quarter2)
             filtered_qua2 = qua2[qua2['Quarter'] == selected_quarter2]
 
             
@@ -579,11 +479,9 @@ def data_exploration():
             with col4:
                 st.plotly_chart(top4,use_container_width=True)   
 
-            state2 ="SELECT DISTINCT State FROM top_users"
-            state2_df = pd.read_sql(state2, engine)
-            state_list2 = state2_df['State'].tolist()
+            state_list2 = get_unique_state('top_users')
             selected_state2 = st.selectbox("Select state for top", state_list2)
-            staes = top_user_state_plotly(selected_state2)
+            staes = fetch_data('top_users','State',selected_state2)
             filtered_sta2 = staes[staes['State'] == selected_state2]
 
             top_ud = filtered_sta2.groupby(['Quarter', 'State'])['Registerted_users'].sum().reset_index()
@@ -604,63 +502,31 @@ def data_exploration():
     else:
         st.title("Geo Map")
         st.subheader("Total Tansaction Amount State wise")
-        query = "SELECT SUM(Transaction_amount) as TransactionAmount, State FROM aggregated_transactions GROUP BY State"
-        df = pd.read_sql(query, engine)
-        fig = px.choropleth(
-            df,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='State',
-            color='TransactionAmount',
-            color_continuous_scale='Reds')
-        fig.update_geos(fitbounds="locations", visible=False)
-        st.plotly_chart(fig,use_container_width=True, width=800, height=600)
-
+        generate_choropleth("SELECT SUM(Transaction_amount) as TransactionAmount, State FROM aggregated_transactions GROUP BY State", 'State', 'TransactionAmount')
 
         st.subheader("Total User Count State wise")
-        query2 = "SELECT sum(User_count) as User, User_brand as Brand, State FROM `aggregated_users` GROUP BY User_brand, State;"
-        df2 = pd.read_sql(query2, engine)
-        fig2 = px.choropleth(
-            df2,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='State',
-            color='User',  
-            color_continuous_scale='Blues')
-        fig2.update_geos(fitbounds="locations", visible=False)
-        st.plotly_chart(fig2,use_container_width=True, width=800, height=600)
-
+        generate_choropleth("SELECT sum(User_count) as User, User_brand as Brand, State FROM `aggregated_users` GROUP BY User_brand, State", 'State', 'User')
 
         st.subheader("Total Register User Count State wise")
-        query3 = "SELECT SUM(Registerted_users)AS Users, State, District_name  FROM `map_users` GROUP BY State, District_name;"
-        df3 = pd.read_sql(query3, engine)
-        fig3 = px.choropleth(
-            df3,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='State',
-            color='District_name',  
-            color_continuous_scale='Blues',
-            hover_data={'State': True, 'District_name': True, 'Users': True})
-
-        fig3.update_geos(fitbounds="locations", visible=False)
-        st.plotly_chart(fig3,use_container_width=True, width=800, height=600)
+        generate_choropleth("SELECT SUM(Registerted_users) AS Users, State, District_name  FROM `map_users` GROUP BY State, District_name", 'State', 'Users', {'State': True, 'District_name': True, 'Users': True})
 
         st.subheader("Top transaction amount State wise")
-        query4 = "SELECT State, SUM(Transaction_amount) AS TranactionAmount, SUM(Transaction_count) AS TransactionCount FROM `top_transactions` GROUP BY State;"
-        df4 = pd.read_sql(query4, engine)
-        fig4 = px.choropleth(
-            df4,
-            geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
-            featureidkey='properties.ST_NM',
-            locations='State',
-            color='TranactionAmount',  # Changed from 'Transaction_amount' to 'TranactionAmount'
-            color_continuous_scale='Reds',
-            hover_data={'State': True, 'TranactionAmount': True, 'TransactionCount': True}  # Corrected alias usage
-        )
-        fig4.update_geos(fitbounds="locations", visible=False)
-        st.plotly_chart(fig4, use_container_width=True, width=800, height=600)
+        generate_choropleth("SELECT State, SUM(Transaction_amount) AS TranactionAmount, SUM(Transaction_count) AS TransactionCount FROM `top_transactions` GROUP BY State", 'State', 'TranactionAmount', {'State': True, 'TranactionAmount': True, 'TransactionCount': True})
 
+def generate_choropleth(query, location_column, color_column, hover_data=None):
+    df = pd.read_sql(query, engine)
+    fig = px.choropleth(
+        df,
+        geojson="https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+        featureidkey='properties.ST_NM',
+        locations=location_column,
+        color=color_column,
+        color_continuous_scale='Blues',
+        hover_data=hover_data
+    )
+    fig.update_geos(fitbounds="locations", visible=False)
+    st.plotly_chart(fig, use_container_width=True, width=800, height=600)
+    
 def question1():
     query = "SELECT State, Year, SUM(Transaction_amount) AS TransactionAmount FROM aggregated_transactions WHERE Year IN (2020, 2023) GROUP BY State, Year ORDER BY TransactionAmount DESC LIMIT 10"
     highest_transaction_state = pd.read_sql(query, engine)
@@ -767,36 +633,23 @@ def question10():
     st.plotly_chart(fig, use_container_width=True)
 def pre_analysis():
     st.title("Query Analysis")
-    query_selection = st.selectbox(
-    "Select a query to run:",
-    ("1). List most highest amount of transaction states in year 2020 and 2023","2). List of Top 10 Transaction Amount by State and Type",
-     "3). Top 10 state Mobile brand","4). List of transaction Amount's in all State",
-     "5). List of Registerd user's in all Cities","6). Transcation from Tamil Nadu around the years",
-     "7). Top 10 States by Total Transaction Amount",
-     "8). Total Transaction Amounts by Transaction Type","9). List of Registered Users by Quarter",
-     "10). Top 10 Districts by Registered Users"))
+    query_options = {
+        "1). List most highest amount of transaction states in year 2020 and 2023": question1,
+        "2). List of Top 10 Transaction Amount by State and Type": question2,
+        "3). Top 10 state Mobile brand": question3,
+        "4). List of transaction Amount's in all State": question4,
+        "5). List of Registerd user's in all Cities": question5,
+        "6). Transcation from Tamil Nadu around the years": question6,
+        "7). Top 10 States by Total Transaction Amount": question7,
+        "8). Total Transaction Amounts by Transaction Type": question8,
+        "9). List of Registered Users by Quarter": question9,
+        "10). Top 10 Districts by Registered Users": question10
+    }
 
+    query_selection = st.selectbox("Select a query to run:", list(query_options.keys()))
 
-    if query_selection == "1). List most highest amount of transaction states in year 2020 and 2023":
-        question1()
-    elif query_selection == "2). List of Top 10 Transaction Amount by State and Type":
-        question2()
-    elif query_selection == "3). Top 10 state Mobile brand":
-        question3()
-    elif query_selection == "4). List of transaction Amount's in all State":
-        question4()
-    elif query_selection == "5). List of Registerd user's in all Cities":
-        question5()
-    elif query_selection == "6). Transcation from Tamil Nadu around the years":
-        question6()
-    elif query_selection == "7). Top 10 States by Total Transaction Amount":
-        question7()
-    elif query_selection == "8). Total Transaction Amounts by Transaction Type":
-        question8()
-    elif query_selection == "9). List of Registered Users by Quarter":
-        question9()
-    elif query_selection == "10). Top 10 Districts by Registered Users":
-        question10()
+    if query_selection in query_options:
+        query_options[query_selection]()
 
 def main():
 
