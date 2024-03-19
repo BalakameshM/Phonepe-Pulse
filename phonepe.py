@@ -30,12 +30,12 @@ def fetch_data(table_name, column_name, value):
 def home_page():
     image = "https://logolook.net/wp-content/uploads/2022/12/PhonePe-Logo.png"
     st.image(image, width=400)
-    st.markdown("# :rainbow[Data Visualization and Exploration]")
+    st.markdown("# Data Visualization and Exploration")
     st.markdown("## :grey[A User-Friendly Tool Using Streamlit and Plotly]")
     col1,col2 = st.columns([3,2],gap="medium")
     with col1:
         st.markdown("### :grey[Technologies used : ]:blue[Github Cloning, Python, Pandas, MySQL, mysql-connector-python, Streamlit, and Plotly.]")
-        st.markdown("### :grey[Overview : ]:blue[In this streamlit web app you can visualize the phonepe pulse data and gain lot of insights on transactions, number of users, top 10 state, district, pincode and which brand has most number of users and so on. Bar charts, Pie charts and Geo map visualization are used to get some insights.]")
+        st.markdown("### :grey[Overview : ]:blue[In this streamlit web app you can visualize the phonepe pulse data and gain lot of insights on transactions, number of users, top 10 state, district and so on. Bar charts, Pie charts and Geo map visualization are used to get some insights.]")
         st.write(" ")
         st.write(" ")
 
